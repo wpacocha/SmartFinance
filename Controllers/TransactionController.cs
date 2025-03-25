@@ -136,3 +136,23 @@ public class TransactionController : ControllerBase
     }
 
 }
+
+[HttpGet("months")]
+public IActionResult GetAvailableMonths()
+{
+    var userId = GetUserId();
+
+    var months = _context.Transactions
+        .Where(t => t.UserId == userId)
+        .GroupBy(t => new { t.Year, t.Month })
+        .OrderByDescending(g => g.Key.Year)
+        .ThenByDescending(g => g.Key.Month)
+        .Select(g => new
+        {
+            year = g.Key.Year,
+            month = g.Key.Month
+        })
+        .ToList();
+
+    return Ok(months);
+}

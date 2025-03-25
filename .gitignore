@@ -27,3 +27,6 @@ Migrations/*Snapshot.cs
 # Secrets
 secrets.json
 .env
+
+#Visual
+.vs/
