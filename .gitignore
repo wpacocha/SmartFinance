@@ -1,5 +1,29 @@
+# Rider
+.idea/
+*.sln.iml
+
+# Build artefacts
 bin/
 obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Entity Framework migration snapshot
+Migrations/*Snapshot.cs
+
+# Local SQLite database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Logs
+*.log
+
+# Secrets
+secrets.json
+.env
