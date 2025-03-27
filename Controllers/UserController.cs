@@ -17,7 +17,7 @@ public class UserController : ControllerBase
     {
         _context = context;
     }
-    
+
     private int GetUserId() =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -26,28 +26,33 @@ public class UserController : ControllerBase
     {
         var userId = GetUserId();
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-        
-        if (user == null) 
+
+        if (user == null)
             return NotFound();
 
-        return Ok(new
+        return Ok(new UserSettingsDto
         {
-            user.Username,
-            user.PrefferedCurrency
+            Username = user.Username,
+            PreferredCurrency = user.PreferredCurrency
         });
     }
 
     [HttpPut("currency")]
-    public IActionResult UpdatePrefferedCurrency([FromBody] string newCurrency)
+    public IActionResult UpdatePreferredCurrency([FromBody] string newCurrency)
     {
         var userId = GetUserId();
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-        
-        if (user == null)
-            return NotFound();
 
-        user.PrefferedCurrency = newCurrency.ToUpper();
+        if (user == null)
+            return NotFound("User not found");
+
+        user.PreferredCurrency = newCurrency.ToUpper();
         _context.SaveChanges();
-        return Ok(new { message = "Currency updated.", currency = user.PrefferedCurrency });
+
+        return Ok(new
+        {
+            message = "Currency updated.",
+            currency = user.PreferredCurrency
+        });
     }
 }

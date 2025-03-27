@@ -19,13 +19,12 @@ public class ExchangeRateController : ControllerBase
     }
 
     [HttpGet("{currency}")]
-    public async Task<IActionResult> GetRate(string currency)
+    public async Task<IActionResult> GetRateAsync(string currency)
     {
         var rate = await _service.GetRateAsync(currency);
         if (rate == null)
             return NotFound($"Currency '{currency}' not found.");
 
-        // zapis do bazy
         _context.ExchangeRates.Add(rate);
         await _context.SaveChangesAsync();
 

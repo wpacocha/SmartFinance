@@ -48,34 +48,35 @@ public class ReportController : ControllerBase
             balance = Math.Round(balance, 2)
         });
     }
-}
-[HttpGet("export")]
-public IActionResult ExportToCsv([FromQuery] int? month, [FromQuery] int? year)
-{
-    var userId = GetUserId();
-    var now = DateTime.Now;
 
-    int targetMonth = month ?? now.Month;
-    int targetYear = year ?? now.Year;
+    [HttpGet("export")]
+    public IActionResult ExportToCsv([FromQuery] int? month, [FromQuery] int? year)
+    {
+        var userId = GetUserId();
+        var now = DateTime.Now;
 
-    var transactions = _context.Transactions
-        .Where(t => t.UserId == userId && t.Month == targetMonth && t.Year == targetYear)
-        .Include(t => t.Category)
-        .ToList();
+        int targetMonth = month ?? now.Month;
+        int targetYear = year ?? now.Year;
 
-    var lines = new List<string>
+        var transactions = _context.Transactions
+            .Where(t => t.UserId == userId && t.Month == targetMonth && t.Year == targetYear)
+            .Include(t => t.Category)
+            .ToList();
+
+        var lines = new List<string>
     {
         "Date,Amount,Currency,IsIncome,Category,Description"
     };
 
-    foreach (var t in transactions)
-    {
-        var line = $"{t.Date:yyyy-MM-dd},{t.Amount},{t.Currency},{t.IsIncome},{t.Category?.Name},{t.Description}";
-        lines.Add(line);
+        foreach (var t in transactions)
+        {
+            var line = $"{t.Date:yyyy-MM-dd},{t.Amount},{t.Currency},{t.IsIncome},{t.Category?.Name},{t.Description}";
+            lines.Add(line);
+        }
+
+        var csvContent = string.Join("\n", lines);
+        var csvBytes = System.Text.Encoding.UTF8.GetBytes(csvContent);
+
+        return File(csvBytes, "text/csv", $"transactions_{targetYear}_{targetMonth}.csv");
     }
-
-    var csvContent = string.Join("\n", lines);
-    var csvBytes = System.Text.Encoding.UTF8.GetBytes(csvContent);
-
-    return File(csvBytes, "text/csv", $"transactions_{targetYear}_{targetMonth}.csv");
 }

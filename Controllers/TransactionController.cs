@@ -20,7 +20,7 @@ public class TransactionController : ControllerBase
     {
         _context = context;
     }
-    
+
     private int GetUserId() =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -29,8 +29,8 @@ public class TransactionController : ControllerBase
     {
         var userId = GetUserId();
         var transactions = _context.Transactions
-            .Where(t=>t.UserId == userId)
-            .Include(t=>t.Category)
+            .Where(t => t.UserId == userId)
+            .Include(t => t.Category)
             .ToList();
         return Ok(transactions);
     }
@@ -55,22 +55,22 @@ public class TransactionController : ControllerBase
     }
 
 
-    
+
     [HttpPut("{id}")]
     public IActionResult UpdateTransaction(int id, [FromBody] Transaction updatedTransaction)
     {
         var userId = GetUserId();
         var transaction = _context.Transactions.FirstOrDefault(t => t.Id == id && t.UserId == userId);
-        
+
         if (transaction == null)
             return NotFound("Transaction not found.");
-        
+
         transaction.Description = updatedTransaction.Description;
         transaction.Amount = updatedTransaction.Amount;
         transaction.Date = updatedTransaction.Date;
         transaction.CategoryId = updatedTransaction.CategoryId;
         transaction.Currency = updatedTransaction.Currency;
-        
+
         _context.SaveChanges();
         return Ok(transaction);
     }
@@ -80,10 +80,10 @@ public class TransactionController : ControllerBase
     {
         var userId = GetUserId();
         var transaction = _context.Transactions.FirstOrDefault(t => t.Id == id && t.UserId == userId);
-        
+
         if (transaction == null)
             return NotFound("Transaction not found.");
-        
+
         _context.Transactions.Remove(transaction);
         _context.SaveChanges();
         return NoContent();
@@ -94,30 +94,30 @@ public class TransactionController : ControllerBase
     {
         var userId = GetUserId();
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-        
+
         var transactions = _context.Transactions
             .Where(t => t.UserId == userId)
             .ToList();
-        
+
         var income = transactions
             .Where(t => t.IsIncome)
             .Sum(t => t.Amount);
-        
+
         var expenses = transactions
-            .Where(t=>!t.IsIncome)
+            .Where(t => !t.IsIncome)
             .Sum(t => t.Amount);
-        
+
         var balance = income - expenses;
 
         return Ok(new
         {
-            currency = user.PrefferedCurrency,
+            currency = user.PreferredCurrency,
             income = Math.Round(income, 2),
             expenses = Math.Round(expenses, 2),
             balance = Math.Round(balance, 2)
         });
     }
-    
+
     [HttpGet("monthly")]
     public IActionResult GetMonthly([FromQuery] int? month, [FromQuery] int? year)
     {
@@ -135,24 +135,24 @@ public class TransactionController : ControllerBase
         return Ok(transactions);
     }
 
-}
 
-[HttpGet("months")]
-public IActionResult GetAvailableMonths()
-{
-    var userId = GetUserId();
+    [HttpGet("months")]
+    public IActionResult GetAvailableMonths()
+    {
+        var userId = GetUserId();
 
-    var months = _context.Transactions
-        .Where(t => t.UserId == userId)
-        .GroupBy(t => new { t.Year, t.Month })
-        .OrderByDescending(g => g.Key.Year)
-        .ThenByDescending(g => g.Key.Month)
-        .Select(g => new
-        {
-            year = g.Key.Year,
-            month = g.Key.Month
-        })
-        .ToList();
+        var months = _context.Transactions
+            .Where(t => t.UserId == userId)
+            .GroupBy(t => new { t.Year, t.Month })
+            .OrderByDescending(g => g.Key.Year)
+            .ThenByDescending(g => g.Key.Month)
+            .Select(g => new
+            {
+                year = g.Key.Year,
+                month = g.Key.Month
+            })
+            .ToList();
 
-    return Ok(months);
+        return Ok(months);
+    }
 }

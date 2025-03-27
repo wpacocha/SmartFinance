@@ -7,7 +7,7 @@ public class User
     public byte[] PasswordHash { get; set; }
     public byte[] PasswordSalt { get; set; }
 
-    public string PrefferedCurrency { get; set; } = "PLN"; // by default
+    public string PreferredCurrency { get; set; } = "PLN"; // by default
     
     public ICollection<Transaction>? Transactions { get; set; }
 }
