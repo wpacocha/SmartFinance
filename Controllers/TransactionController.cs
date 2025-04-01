@@ -39,21 +39,41 @@ public class TransactionController : ControllerBase
     public async Task<IActionResult> CreateTransaction([FromBody] Transaction transaction,
         [FromServices] ExchangeRateService exchangeService)
     {
-        transaction.UserId = GetUserId();
+        try
+        {
+            int userId = GetUserId();
+            transaction.UserId = userId;
 
-        // if user does not change the date set current
-        if (transaction.Date == default)
-            transaction.Date = DateTime.Now;
+            if (transaction.Date == default)
+                transaction.Date = DateTime.Now;
 
-        transaction.Month = transaction.Date.Month;
-        transaction.Year = transaction.Date.Year;
+            transaction.Month = transaction.Date.Month;
+            transaction.Year = transaction.Date.Year;
 
-        _context.Transactions.Add(transaction);
-        await _context.SaveChangesAsync();
+            // SprawdŸ, czy miesi¹c istnieje, a jak nie - dodaj
+            var monthExists = _context.Months.Any(m => m.UserId == userId && m.MonthNumber == transaction.Month && m.Year == transaction.Year);
+            if (!monthExists)
+            {
+                var newMonth = new Month
+                {
+                    UserId = userId,
+                    MonthNumber = transaction.Month,
+                    Year = transaction.Year
+                };
+                _context.Months.Add(newMonth);
+            }
 
-        return Ok(transaction);
+            _context.Transactions.Add(transaction);
+            await _context.SaveChangesAsync();
+
+            return Ok(transaction);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("B³¹d przy dodawaniu transakcji: " + ex.Message);
+            return StatusCode(500, "Server error: " + ex.Message);
+        }
     }
-
 
 
     [HttpPut("{id}")]

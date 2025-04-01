@@ -1,374 +1,357 @@
-import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+
 
 export default function MonthView() {
     const { year, month } = useParams();
     const [transactions, setTransactions] = useState([]);
-    const [showForm, setShowForm] = useState(false);
-    const [preferredCurrency, setPreferredCurrency] = useState('PLN');
-    
     const [categories, setCategories] = useState([]);
+    const [preferredCurrency, setPreferredCurrency] = useState("PLN");
+    const [showForm, setShowForm] = useState(false);
+    const [editId, setEditId] = useState(null);
+    const [editForm, setEditForm] = useState({});
+    const [filterType, setFilterType] = useState("all"); // 'all', 'income', 'expense'
+    const [report, setReport] = useState(null);
 
-    const [editingTransaction, setEditingTransaction] = useState(null);
-    const [editForm, setEditForm] = useState({
-        description: '',
-        amount: '',
-        date: '',
-        categoryId: '',
-        isIncome: false
-    });
+
 
     const [form, setForm] = useState({
-        description: '',
-        amount: '',
-        date: new Date().toISOString().split('T')[0],
-        categoryId: '',
+        description: "",
+        amount: "",
+        date: new Date().toISOString().split("T")[0],
+        categoryId: "",
         isIncome: false
     });
-    
-    const monthNames = [
-        "",
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-    ];
 
     useEffect(() => {
-        const fetchUserCurrency = async () => {
+        const fetchAll = async () => {
+            const token = localStorage.getItem("token");
+
             try {
-                const res = await fetch('http://localhost:5201/api/user/me', {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
+                const res = await fetch(`http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`, {
+                    headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await res.json();
-                setPreferredCurrency(data.currency || 'PLN');
+                const sorted = (data?.$values ?? []).sort((a, b) => {
+                    const dateA = new Date(a.date ?? '1970-01-01');
+                    const dateB = new Date(b.date ?? '1970-01-01');
+                    return dateB.getTime() - dateA.getTime(); // najnowsze na górze
+                });
+                setTransactions(sorted);
+
             } catch (err) {
-                console.error('Could not fetch user currency', err);
+                console.error("Failed to fetch transactions", err);
             }
+
+            try {
+                const res = await fetch("http://localhost:5201/api/category", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                setCategories(data.$values ?? []);
+            } catch (err) {
+                console.error("Failed to fetch categories", err);
+            }
+
+            try {
+                const res = await fetch("http://localhost:5201/api/user/me", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                setPreferredCurrency(data.preferredCurrency || "PLN");
+            } catch (err) {
+                console.error("Failed to fetch user", err);
+            }
+            try {
+                const res = await fetch(`http://localhost:5201/api/report/monthly?month=${month}&year=${year}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                setReport(data);
+            } catch (err) {
+                console.error("Failed to fetch report", err);
+            }
+
         };
 
-        const fetchTransactions = async () => {
+        fetchAll();
+    }, [month, year]);
+
+    const handleAddTransaction = async (e) => {
+            e.preventDefault();
+
             try {
-                const res = await fetch(
+                const res = await fetch("http://localhost:5201/api/transaction", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
+                    body: JSON.stringify({
+                        ...form,
+                        amount: parseFloat(form.amount),
+                        categoryId: parseInt(form.categoryId),
+                        currency: preferredCurrency
+                    })
+
+                });
+
+                if (!res.ok) throw new Error("Failed to add transaction");
+
+                // Reset form
+                setForm({
+                    description: "",
+                    amount: "",
+                    date: new Date().toISOString().split("T")[0],
+                    categoryId: "",
+                    isIncome: false
+                });
+                setShowForm(false);
+
+                // 🔁 Odswież dane z aktualnego miesiąca
+                const updatedRes = await fetch(
                     `http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`,
                     {
                         headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
+                            Authorization: `Bearer ${localStorage.getItem("token")}`
                         }
                     }
                 );
-                const data = await res.json();
-                setTransactions(data);
-            } catch (err) {
-                console.error('Failed to fetch transactions.', err);
-            }
-        };
-
-        const fetchCategories = async () => {
-            try {
-                const res = await fetch('http://localhost:5201/api/category', {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
+                const updatedData = await updatedRes.json();
+                const sorted = (Array.isArray(updatedData) ? updatedData : updatedData?.$values ?? []).sort((a, b) => {
+                    const dateA = new Date(a.date ?? '1970-01-01');
+                    const dateB = new Date(b.date ?? '1970-01-01');
+                    return dateB.getTime() - dateA.getTime();
                 });
-                const data = await res.json();
-                setCategories(data);
-            } catch (err) {
-                console.error('Failed to fetch categories', err);
-            }
-        };
+                setTransactions(sorted);
 
-        fetchUserCurrency();
-        fetchTransactions();
-        fetchCategories();
-    }, [month, year]);
-    
-    const handleAdd = async (e) => {
+            } catch (err) {
+                alert("Failed to add transaction.");
+                console.error(err);
+            }
+    };
+
+    const handleEditTransaction = (transaction) => {
+        setEditId(transaction.id);
+        setEditForm({
+            description: transaction.description,
+            amount: transaction.amount,
+            date: transaction.date?.split("T")[0] || "",
+            categoryId: transaction.categoryId,
+            isIncome: transaction.isIncome
+        });
+    };
+
+    const handleUpdateTransaction = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:5201/api/transaction', {
-                method: 'POST',
+            const res = await fetch(`http://localhost:5201/api/transaction/${editId}`, {
+                method: "PUT",
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
                 },
                 body: JSON.stringify({
-                    description: form.description,
-                    amount: parseFloat(form.amount),
-                    date: form.date,
-                    isIncome: form.isIncome,
-                    categoryId: form.categoryId,
-                    currency: preferredCurrency
+                    ...editForm,
+                    amount: parseFloat(editForm.amount),
+                    categoryId: parseInt(editForm.categoryId),
+                    currency: preferredCurrency,
+                    date: editForm.date
                 })
             });
 
-            if (!res.ok) throw new Error('Failed to add transaction.');
+            if (!res.ok) throw new Error("Failed to update");
 
-            setForm({
-                description: '',
-                amount: '',
-                date: new Date().toISOString().split('T')[0],
-                categoryId: '',
-                isIncome: false
-            });
-            setShowForm(false);
-            
-            const updatedRes = await fetch(
-                `http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
-            );
-            const updatedData = await updatedRes.json();
-            setTransactions(updatedData);
+            setEditId(null);
+            await refreshTransactions();
         } catch (err) {
-            alert('Failed to add transaction.');
+            console.error(err);
+            alert("Update failed.");
         }
     };
-    const handleDelete = async (id) => {
-        const confirmDelete = window.confirm(
-            'Are you sure you want to delete this transaction?'
-        );
-        if (!confirmDelete) return;
+
+    const handleDeleteTransaction = async (id) => {
+        if (!window.confirm("Delete this transaction?")) return;
 
         try {
             const res = await fetch(`http://localhost:5201/api/transaction/${id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
             });
-
-            if (!res.ok) throw new Error('Failed to delete transaction.');
-            
-            const updatedRes = await fetch(
-                `http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
-            );
-            const updatedData = await updatedRes.json();
-            setTransactions(updatedData);
+            if (!res.ok) throw new Error("Delete failed");
+            await refreshTransactions();
         } catch (err) {
-            alert('Failed to delete transaction.');
+            console.error(err);
+            alert("Failed to delete transaction.");
         }
     };
-    
-    const handleEditClick = (t) => {
-        setEditingTransaction(t);
-        setEditForm({
-            description: t.description,
-            amount: t.amount,
-            date: t.date.split('T')[0],
-            categoryId: t.categoryId,
-            isIncome: t.isIncome
+
+    const refreshTransactions = async () => {
+        const updatedRes = await fetch(`http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
         });
+        const updatedData = await updatedRes.json();
+        const sorted = (Array.isArray(updatedData) ? updatedData : updatedData?.$values ?? []).sort((a, b) => {
+            const dateA = new Date(a.date ?? '1970-01-01');
+            const dateB = new Date(b.date ?? '1970-01-01');
+            return dateB.getTime() - dateA.getTime();
+        });
+        setTransactions(sorted);
     };
-    
-    const handleEditSubmit = async (e) => {
-        e.preventDefault();
-        if (!editingTransaction) return;
 
-        try {
-            const res = await fetch(
-                `http://localhost:5201/api/transaction/${editingTransaction.id}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        ...editForm,
-                        amount: parseFloat(editForm.amount),
-                        currency: preferredCurrency
-                    })
-                }
-            );
-            if (!res.ok) throw new Error('Failed to update transaction.');
-
-            setEditingTransaction(null);
-
-            const updatedRes = await fetch(
-                `http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
-            );
-            const updatedData = await updatedRes.json();
-            setTransactions(updatedData);
-        } catch (err) {
-            alert('Update failed');
-        }
-    };
-    
     return (
         <div id="month-view">
-            <div id="header">
-                <h2>
-                    Transactions for {monthNames[Number(month)]} {year}
-                </h2>
-                <button id="add-btn" onClick={() => setShowForm(!showForm)}>
-                    +
-                </button>
-            </div>
-            
-            {showForm && (
-                <form id="add-transaction-form" onSubmit={handleAdd}>
-                    <input
-                        placeholder="Description"
-                        value={form.description}
-                        onChange={(e) => setForm({ ...form, description: e.target.value })}
-                        required
-                    />
-                    <input
-                        placeholder="Amount"
-                        type="number"
-                        step="0.01"
-                        value={form.amount}
-                        onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                        required
-                    />
-                    <input
-                        type="date"
-                        value={form.date}
-                        onChange={(e) => setForm({ ...form, date: e.target.value })}
-                        required
-                    />
-                    <select
-                        value={form.categoryId}
-                        onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                        required
-                    >
-                        <option value="">-- Select Category --</option>
-                        {categories.map((c) => (
-                            <option key={c.id} value={c.id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={form.isIncome}
-                            onChange={(e) =>
-                                setForm({ ...form, isIncome: !form.isIncome })
-                            }
-                        />
-                        Is Income
-                    </label>
-                    <button type="submit">Add</button>
-                </form>
-            )}
-            
-            <ul id="transaction-list">
-                {transactions.map((t) => (
-                    <li key={t.id}>
-                        <div>
-                            <strong>{t.description}</strong> – {t.amount} {t.currency}
-                            <br />
-                            <small>
-                                {t.date.split('T')[0]} | {t.category?.name} |{' '}
-                                {t.isIncome ? 'Income' : 'Expense'}
-                            </small>
-                            <div>
-                                <button onClick={() => handleDelete(t.id)}>🗑️ Delete</button>
-                                <button onClick={() => handleEditClick(t)}>✏️ Edit</button>
-                            </div>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-            
-            {editingTransaction && (
-                <div id="edit-modal">
-                    <div id="edit-modal-header">
-                        <h3>Edit Transaction</h3>
-                        <button
-                            id="close-edit-modal"
-                            onClick={() => setEditingTransaction(null)}
-                        >
-                            ❌
-                        </button>
-                    </div>
+            <h2>Transactions for {new Date(year, month - 1).toLocaleString("default", { month: "long" })} {year}</h2>
 
-                    <form onSubmit={handleEditSubmit}>
-                        <input
-                            value={editForm.description}
-                            onChange={(e) =>
-                                setEditForm({ ...editForm, description: e.target.value })
-                            }
-                            required
-                        />
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={editForm.amount}
-                            onChange={(e) =>
-                                setEditForm({ ...editForm, amount: e.target.value })
-                            }
-                            required
-                        />
-                        <input
-                            type="date"
-                            value={editForm.date}
-                            onChange={(e) =>
-                                setEditForm({ ...editForm, date: e.target.value })
-                            }
-                            required
-                        />
-                        <select
-                            value={editForm.categoryId}
-                            onChange={(e) =>
-                                setEditForm({ ...editForm, categoryId: e.target.value })
-                            }
-                            required
-                        >
-                            <option value="">-- Select Category --</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={editForm.isIncome}
-                                onChange={(e) =>
-                                    setEditForm({ ...editForm, isIncome: e.target.checked })
-                                }
-                            />
-                            Is Income
-                        </label>
-
-                        <br />
-                        <button type="submit">💾 Save</button>
-                        <button
-                            type="button"
-                            onClick={() => setEditingTransaction(null)}
-                        >
-                            ✖ Cancel
-                        </button>
-                    </form>
+            <form onSubmit={handleAddTransaction} style={{ marginBottom: "20px" }}>
+                <input
+                    placeholder="Description"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    required
+                />
+                <input
+                    type="number"
+                    placeholder="Amount"
+                    value={form.amount}
+                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                    required
+                />
+                <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    required
+                />
+                <select
+                    value={form.categoryId}
+                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                    required
+                >
+                    <option value="">-- Select Category --</option>
+                    {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={form.isIncome}
+                        onChange={(e) => setForm({ ...form, isIncome: e.target.checked })}
+                    /> Income
+                </label>
+                <button type="submit">Add</button>
+            </form>
+            <label style={{ display: 'block', marginBottom: '10px' }}>
+                Show:{" "}
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                    <option value="all">All</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+            </label>
+            {report && (
+                <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>
+                    <h3>Monthly Report</h3>
+                    <p><strong>Income:</strong> {report.income} {preferredCurrency}</p>
+                    <p><strong>Expenses:</strong> {report.expenses} {preferredCurrency}</p>
+                    <p><strong>Balance:</strong> {report.balance} {preferredCurrency}</p>
+                   
+                    <button onClick={() => {
+                        const token = localStorage.getItem("token");
+                        const url = `http://localhost:5201/api/report/export?month=${month}&year=${year}`;
+                        fetch(url, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        })
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `transactions_${year}_${month}.csv`;
+                                a.click();
+                            });
+                    }}>
+                        Export to CSV
+                    </button>
                 </div>
             )}
+
+            <ul id="transaction-list">
+                {Array.isArray(transactions) && transactions.length > 0 ? (
+                    transactions
+                        .filter(t => {
+                            if (filterType === "income") return t.isIncome;
+                            if (filterType === "expense") return !t.isIncome;
+                            return true;
+                        })
+                        .map((t) => (
+                        <li key={t.id} style={{ marginBottom: "15px" }}>
+                            {editId === t.id ? (
+                                <form onSubmit={handleUpdateTransaction}>
+                                    <input
+                                        value={editForm.description}
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                        required
+                                    />
+                                    <input
+                                        type="number"
+                                        value={editForm.amount}
+                                        onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                                        required
+                                    />
+                                    <input
+                                        type="date"
+                                        value={editForm.date}
+                                        onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                                        required
+                                    />
+                                    <select
+                                        value={editForm.categoryId}
+                                        onChange={(e) => setEditForm({ ...editForm, categoryId: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">-- Select Category --</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={editForm.isIncome}
+                                            onChange={(e) => setEditForm({ ...editForm, isIncome: e.target.checked })}
+                                        /> Income
+                                    </label>
+                                    <button type="submit">Save</button>
+                                    <button type="button" onClick={() => setEditId(null)}>Cancel</button>
+                                </form>
+                            ) : (
+                                <div>
+                                    <strong>{t.description}</strong> – {t.amount} {t.currency}
+                                    <br />
+                                    <small>
+                                        {t.date?.split('T')[0] || 'No date'} | {t.category?.name} |{' '}
+                                        {t.isIncome ? 'Income' : 'Expense'}
+                                    </small>
+                                    <br />
+                                    <button onClick={() => handleEditTransaction(t)}>Edit</button>
+                                    <button onClick={() => handleDeleteTransaction(t.id)}>Delete</button>
+                                </div>
+                            )}
+                        </li>
+                    ))
+
+                ) : (
+                    <p style={{ padding: "1rem" }}>No transactions yet. Use the + button to add one!</p>
+                )}
+            </ul>
         </div>
+
     );
+
 }

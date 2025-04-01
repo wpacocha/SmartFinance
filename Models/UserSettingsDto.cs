@@ -2,7 +2,7 @@ namespace SmartFinance.API.Models
 {
     public class UserSettingsDto
     {
-        public string Username { get; set; }
-        public string PreferredCurrency { get; set; }
+        public required string Username { get; set; }
+        public required string PreferredCurrency { get; set; }
     }
 }

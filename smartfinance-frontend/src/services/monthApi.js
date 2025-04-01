@@ -1,31 +1,33 @@
 const API_URL = process.env.REACT_APP_API_URL;
 
-export async function getMonths(token) {
-    const res = await fetch(`${API_URL}/month`, {
+export const getMonths = async (token) => {
+    const res = await fetch("http://localhost:5201/api/month", {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
-    return await res.json();
-}
+    return res.json();
+};
 
-export async function createMonth(token, year, month) {
-    const res = await fetch(`${API_URL}/month`, {
-        method: 'POST',
+export const createMonth = async (token, year, month) => {
+    const res = await fetch("http://localhost:5201/api/month", {
+        method: "POST",
         headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ year, month })
+        body: JSON.stringify({ Year: year, MonthNumber: month })
     });
-    return await res.json();
-}
+    return res.json(); // lub return res.ok jeœli nie potrzebujesz danych
+};
 
-export async function deleteMonth(token, id) {
-    await fetch(`${API_URL}/month/${id}`, {
-        method: 'DELETE',
+export const deleteMonth = async (token, id) => {
+    const res = await fetch(`http://localhost:5201/api/month/${id}`, {
+        method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
-}
+    return res.ok;
+};
+

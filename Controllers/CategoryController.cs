@@ -20,7 +20,7 @@ public class CategoryController : ControllerBase
 
     private int GetUserId() =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    
+
     [HttpGet]
     public ActionResult<IEnumerable<Category>> GetCategories()
     {

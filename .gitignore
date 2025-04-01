@@ -30,3 +30,4 @@ secrets.json
 
 #Visual
 .vs/
+/SmartFinance.Tests/UserControllerTests.cs

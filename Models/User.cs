@@ -4,8 +4,8 @@ public class User
 {
     public int Id { get; set; }
     public string Username { get; set; } = string.Empty;
-    public byte[] PasswordHash { get; set; }
-    public byte[] PasswordSalt { get; set; }
+    public required byte[] PasswordHash { get; set; }
+    public required byte[] PasswordSalt { get; set; }
 
     public string PreferredCurrency { get; set; } = "PLN"; // by default
     

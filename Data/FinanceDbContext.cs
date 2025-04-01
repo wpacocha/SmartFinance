@@ -12,4 +12,6 @@ public class FinanceDbContext : DbContext
     public DbSet<Category> Categories { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<ExchangeRate> ExchangeRates { get; set; }
+    public DbSet<Month> Months { get; set; }
+
 }

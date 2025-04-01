@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserDto request)
     {
-        if(await _context.Users.AnyAsync(u => u.Username == request.Username))
+        if (await _context.Users.AnyAsync(u => u.Username == request.Username))
             return BadRequest("Username already exists.");
         CreatePasswordHash(request.Password, out byte[] hash, out byte[] salt);
 
@@ -47,8 +47,8 @@ public class AuthController : ControllerBase
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
         if (user == null) return BadRequest("User not found.");
-        
-        if(!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt)) 
+
+        if (!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
             return BadRequest("Invalid password.");
         string token = CreateToken(user);
         return Ok(new { token });
@@ -75,10 +75,10 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username)
         };
-        
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-        
+
         var token = new JwtSecurityToken(
             claims: claims,
             expires: DateTime.Now.AddDays(7),

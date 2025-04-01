@@ -8,12 +8,42 @@ export default function Dashboard() {
     const [yearInput, setYearInput] = useState('');
     const [monthInput, setMonthInput] = useState('');
     const navigate = useNavigate();
+    const [yearlyReport, setYearlyReport] = useState(null);
+
+    useEffect(() => {
+        const fetchYearlyReport = async () => {
+            const token = localStorage.getItem("token");
+            const year = new Date().getFullYear();
+
+            try {
+                const res = await fetch(`http://localhost:5201/api/report/yearly?year=${year}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                setYearlyReport(data);
+            } catch (err) {
+                console.error("Failed to fetch yearly report", err);
+            }
+        };
+
+        fetchYearlyReport();
+    }, []);
+
 
     const fetchMonths = async () => {
         try {
-            const token = localStorage.getItem('token'); 
-            const data = await getMonths(token);         
-            setMonths(data);
+            const token = localStorage.getItem('token');
+            const data = await getMonths(token);
+            const monthsList = data?.$values ?? data ?? [];
+
+            const sorted = monthsList.sort((a, b) =>
+                b.year !== a.year
+                    ? b.year - a.year
+                    : b.month - a.month
+            );
+
+            setMonths(sorted);
+
         } catch (err) {
             console.error('Error fetching months', err);
         }
@@ -25,18 +55,29 @@ export default function Dashboard() {
 
     const handleAddMonth = async (e) => {
         e.preventDefault();
+
+        const year = parseInt(yearInput);
+        const month = parseInt(monthInput);
+
+        if (!year || !month || month < 1 || month > 12) {
+            alert("Please select a valid year and month.");
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
-            await createMonth(token, parseInt(yearInput), parseInt(monthInput));
-            fetchMonths();
-            
+            await createMonth(token, year, month);
             setYearInput('');
             setMonthInput('');
             setShowForm(false);
+            await fetchMonths();
+            navigate(`/month/${year}/${month}`);
         } catch (err) {
             console.error('Error creating month', err);
         }
+
     };
+
 
     const handleDeleteMonth = async (id) => {
         if (!window.confirm('Delete this month?')) return;
@@ -48,7 +89,7 @@ export default function Dashboard() {
             console.error('Error deleting month', err);
         }
     };
-    
+
     const monthNames = [
         '', 'January', 'February', 'March',
         'April', 'May', 'June', 'July',
@@ -59,16 +100,15 @@ export default function Dashboard() {
     return (
         <div id="dashboard">
             <h2>Your Available Months</h2>
-            
+
             {months.length === 0 && (
-                <p>No months yet.</p>
+                <p>No months yet. Add a transaction to get started.</p>
             )}
-            
+
             <button onClick={() => setShowForm(!showForm)}>+ Add Month</button>
 
             {showForm && (
                 <form onSubmit={handleAddMonth}>
-                    {/* Wybór roku */}
                     <select
                         value={yearInput}
                         onChange={(e) => setYearInput(e.target.value)}
@@ -76,40 +116,26 @@ export default function Dashboard() {
                     >
                         <option value="">-- Choose Year --</option>
                         {[...Array(11)].map((_, i) => {
-                            const y = 2020 + i; // od 2020 do 2030
-                            return (
-                                <option key={y} value={y}>
-                                    {y}
-                                </option>
-                            );
+                            const y = 2020 + i;
+                            return <option key={y} value={y}>{y}</option>;
                         })}
                     </select>
 
-                    {/* Wybór miesiąca */}
                     <select
                         value={monthInput}
                         onChange={(e) => setMonthInput(e.target.value)}
                         required
                     >
                         <option value="">-- Choose Month --</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
+                        {monthNames.slice(1).map((name, idx) => (
+                            <option key={idx + 1} value={idx + 1}>{name}</option>
+                        ))}
                     </select>
 
                     <button type="submit">Create</button>
                 </form>
             )}
-            
+
             {months.map((m) => (
                 <div key={m.id} style={{ marginTop: '10px' }}>
                     <button onClick={() => navigate(`/month/${m.year}/${m.month}`)}>
@@ -118,6 +144,32 @@ export default function Dashboard() {
                     <button onClick={() => handleDeleteMonth(m.id)}>Delete</button>
                 </div>
             ))}
+            {yearlyReport && (
+                <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>
+                    <h3>Yearly Report � {yearlyReport.year}</h3>
+                    <p><strong>Income:</strong> {yearlyReport.income} PLN</p>
+                    <p><strong>Expenses:</strong> {yearlyReport.expenses} PLN</p>
+                    <p><strong>Balance:</strong> {yearlyReport.balance} PLN</p>
+                    <button onClick={() => {
+                        const token = localStorage.getItem("token");
+                        const url = `http://localhost:5201/api/report/export-yearly?year=${yearlyReport.year}`;
+                        fetch(url, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        })
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `transactions_${yearlyReport.year}.csv`;
+                                a.click();
+                            });
+                    }}>
+                        Export yearly CSV
+                    </button>
+                </div>
+            )}
+
         </div>
     );
-}
+};

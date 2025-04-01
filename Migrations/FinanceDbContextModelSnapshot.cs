@@ -62,6 +62,28 @@ namespace SmartFinance.API.Migrations
                     b.ToTable("ExchangeRates");
                 });
 
+            modelBuilder.Entity("SmartFinance.API.Models.Month", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MonthNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Months");
+                });
+
             modelBuilder.Entity("SmartFinance.API.Models.Transaction", b =>
                 {
                     b.Property<int>("Id")
@@ -120,7 +142,7 @@ namespace SmartFinance.API.Migrations
                         .IsRequired()
                         .HasColumnType("BLOB");
 
-                    b.Property<string>("PrefferedCurrency")
+                    b.Property<string>("PreferredCurrency")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -138,6 +160,17 @@ namespace SmartFinance.API.Migrations
                     b.HasOne("SmartFinance.API.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SmartFinance.API.Models.Month", b =>
+                {
+                    b.HasOne("SmartFinance.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

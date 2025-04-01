@@ -59,7 +59,7 @@ public static class DataSeeder
                 new Category {Name = "Donations", Type = "Other"},
                 new Category {Name = "Miscellaneous", Type = "Other"},
             };
-            
+
             context.Categories.AddRange(categories);
             context.SaveChanges();
         }
