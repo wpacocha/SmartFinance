@@ -340,7 +340,7 @@ export default function MonthView() {
                             </li>
                         ))
                 ) : (
-                    <p style={{ padding: "1rem" }}>No transactions yet. Use the + button to add one!</p>
+                    <p style={{ padding: "1rem" }}>No transactions yet. Add one!</p>
                 )}
             </ul>
         </div>

@@ -154,7 +154,7 @@ export default function Dashboard() {
             ))}
             {yearlyReport && (
                 <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>
-                    <h3>Yearly Report – {yearlyReport.year}</h3>
+                    <h3>Yearly Report {yearlyReport.year}</h3>
                     <p><strong>Income:</strong> {yearlyReport.income} PLN</p>
                     <p><strong>Expenses:</strong> {yearlyReport.expenses} PLN</p>
                     <p><strong>Balance:</strong> {yearlyReport.balance} PLN</p>
