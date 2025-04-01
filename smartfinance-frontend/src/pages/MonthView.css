@@ -1,0 +1,158 @@
+/* Kontener g³ówny */
+#month-view {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+    /* Nag³ówek */
+    #month-view h2 {
+        margin-bottom: 24px;
+        text-align: center;
+        color: #333;
+    }
+
+/* Formularz dodawania/edycji transakcji */
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+    form input,
+    form select {
+        flex: 1 1 180px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    form button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        form button:hover {
+            background-color: #43a047;
+        }
+
+/* Lista transakcji */
+#transaction-list {
+    list-style: none;
+    padding: 0;
+}
+
+    #transaction-list li {
+        background-color: #f9f9f9;
+        border-left: 6px solid #ccc;
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+        /* Karta przychodu / wydatku */
+        #transaction-list li.income {
+            border-left-color: #4caf50;
+        }
+
+        #transaction-list li.expense {
+            border-left-color: #f44336;
+        }
+
+    /* Teksty */
+    #transaction-list strong {
+        font-size: 16px;
+        color: #333;
+    }
+
+    #transaction-list small {
+        font-size: 12px;
+        color: #777;
+    }
+
+/* Przycisk + (FAB) */
+.add-transaction-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    font-size: 28px;
+    padding: 14px 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s ease;
+    z-index: 100;
+}
+
+    .add-transaction-btn:hover {
+        background-color: #388e3c;
+    }
+
+/* Styl dla przycisków akcji */
+.action-buttons {
+    margin-top: 8px;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 8px 14px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.edit-btn {
+    background-color: #2196f3;
+    color: white;
+}
+
+    .edit-btn:hover {
+        background-color: #1976d2;
+    }
+
+.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+    .delete-btn:hover {
+        background-color: #d32f2f;
+    }
+
+
+/* Miesiêczny raport */
+.export-btn {
+    background-color: #9c27b0;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+    .export-btn:hover {
+        background-color: #7b1fa2;
+    }

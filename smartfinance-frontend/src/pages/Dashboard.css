@@ -1,0 +1,112 @@
+#dashboard {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 16px;
+}
+
+    /* Add Month Button */
+    #dashboard > button {
+        padding: 10px 16px;
+        background-color: #4caf50;
+        color: white;
+        font-size: 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 20px;
+        transition: background-color 0.2s ease;
+    }
+
+        #dashboard > button:hover {
+            background-color: #388e3c;
+        }
+
+/* Month Row */
+.month-box {
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    border-left: 6px solid #4caf50;
+}
+
+    /* Month Button */
+    .month-box .view-btn {
+        font-weight: bold;
+        font-size: 16px;
+        color: #333;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+        .month-box .view-btn:hover {
+            text-decoration: underline;
+        }
+
+    /* Delete Button */
+    .month-box .delete-btn {
+        padding: 6px 10px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+        .month-box .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+/* Yearly Report Box */
+.yearly-report {
+    margin-top: 40px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 16px;
+    border-top: 4px solid #9c27b0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+    .yearly-report h3 {
+        font-size: 20px;
+        margin-bottom: 14px;
+        color: #333;
+    }
+
+    .yearly-report p {
+        margin: 6px 0;
+        font-size: 15px;
+    }
+
+        .yearly-report p strong {
+            min-width: 90px;
+            display: inline-block;
+        }
+
+/* Export Button */
+.export-btn {
+    background-color: #9c27b0;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+    .export-btn:hover {
+        background-color: #7b1fa2;
+    }

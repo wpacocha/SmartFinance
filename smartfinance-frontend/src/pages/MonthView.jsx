@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-
+import "./MonthView.css";
+import { FaEdit, FaTrash, FaFileCsv } from "react-icons/fa";
 
 export default function MonthView() {
     const { year, month } = useParams();
@@ -10,18 +11,17 @@ export default function MonthView() {
     const [showForm, setShowForm] = useState(false);
     const [editId, setEditId] = useState(null);
     const [editForm, setEditForm] = useState({});
-    const [filterType, setFilterType] = useState("all"); // 'all', 'income', 'expense'
+    const [filterType, setFilterType] = useState("all");
     const [report, setReport] = useState(null);
-
-
 
     const [form, setForm] = useState({
         description: "",
         amount: "",
-        date: new Date().toISOString().split("T")[0],
+        date: "", // będzie ustawione później
         categoryId: "",
         isIncome: false
     });
+
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -32,13 +32,8 @@ export default function MonthView() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await res.json();
-                const sorted = (data?.$values ?? []).sort((a, b) => {
-                    const dateA = new Date(a.date ?? '1970-01-01');
-                    const dateB = new Date(b.date ?? '1970-01-01');
-                    return dateB.getTime() - dateA.getTime(); // najnowsze na górze
-                });
+                const sorted = (data?.$values ?? []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 setTransactions(sorted);
-
             } catch (err) {
                 console.error("Failed to fetch transactions", err);
             }
@@ -62,6 +57,7 @@ export default function MonthView() {
             } catch (err) {
                 console.error("Failed to fetch user", err);
             }
+
             try {
                 const res = await fetch(`http://localhost:5201/api/report/monthly?month=${month}&year=${year}`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -71,64 +67,61 @@ export default function MonthView() {
             } catch (err) {
                 console.error("Failed to fetch report", err);
             }
+            if (year && month) {
+                const defaultDate = new Date(Number(year), Number(month) - 1, 1)
+                    .toLocaleDateString("en-CA");
+
+                setForm((prev) => ({ ...prev, date: defaultDate }));
+            }
 
         };
 
         fetchAll();
     }, [month, year]);
 
+    const refreshTransactions = async () => {
+        const res = await fetch(`http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        const sorted = (Array.isArray(data) ? data : data?.$values ?? []).sort((a, b) => new Date(b.date) - new Date(a.date));
+        setTransactions(sorted);
+    };
+
     const handleAddTransaction = async (e) => {
-            e.preventDefault();
+        e.preventDefault();
+        try {
+            const res = await fetch("http://localhost:5201/api/transaction", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                },
+                body: JSON.stringify({
+                    ...form,
+                    amount: parseFloat(form.amount),
+                    categoryId: parseInt(form.categoryId),
+                    currency: preferredCurrency
+                })
+            });
 
-            try {
-                const res = await fetch("http://localhost:5201/api/transaction", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`
-                    },
-                    body: JSON.stringify({
-                        ...form,
-                        amount: parseFloat(form.amount),
-                        categoryId: parseInt(form.categoryId),
-                        currency: preferredCurrency
-                    })
+            if (!res.ok) throw new Error("Failed to add transaction");
 
-                });
+            setForm({
+                description: "",
+                amount: "",
+                date: new Date(Number(year), Number(month) - 1, 1)
+                    .toLocaleDateString("en-CA"),
+                categoryId: "",
+                isIncome: false
+            });
 
-                if (!res.ok) throw new Error("Failed to add transaction");
-
-                // Reset form
-                setForm({
-                    description: "",
-                    amount: "",
-                    date: new Date().toISOString().split("T")[0],
-                    categoryId: "",
-                    isIncome: false
-                });
-                setShowForm(false);
-
-                // 🔁 Odswież dane z aktualnego miesiąca
-                const updatedRes = await fetch(
-                    `http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token")}`
-                        }
-                    }
-                );
-                const updatedData = await updatedRes.json();
-                const sorted = (Array.isArray(updatedData) ? updatedData : updatedData?.$values ?? []).sort((a, b) => {
-                    const dateA = new Date(a.date ?? '1970-01-01');
-                    const dateB = new Date(b.date ?? '1970-01-01');
-                    return dateB.getTime() - dateA.getTime();
-                });
-                setTransactions(sorted);
-
-            } catch (err) {
-                alert("Failed to add transaction.");
-                console.error(err);
-            }
+            setShowForm(false);
+            await refreshTransactions();
+        } catch (err) {
+            alert("Failed to add transaction.");
+            console.error(err);
+        }
     };
 
     const handleEditTransaction = (transaction) => {
@@ -161,7 +154,6 @@ export default function MonthView() {
             });
 
             if (!res.ok) throw new Error("Failed to update");
-
             setEditId(null);
             await refreshTransactions();
         } catch (err) {
@@ -172,7 +164,6 @@ export default function MonthView() {
 
     const handleDeleteTransaction = async (id) => {
         if (!window.confirm("Delete this transaction?")) return;
-
         try {
             const res = await fetch(`http://localhost:5201/api/transaction/${id}`, {
                 method: "DELETE",
@@ -188,24 +179,12 @@ export default function MonthView() {
         }
     };
 
-    const refreshTransactions = async () => {
-        const updatedRes = await fetch(`http://localhost:5201/api/transaction/monthly?month=${month}&year=${year}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
-        });
-        const updatedData = await updatedRes.json();
-        const sorted = (Array.isArray(updatedData) ? updatedData : updatedData?.$values ?? []).sort((a, b) => {
-            const dateA = new Date(a.date ?? '1970-01-01');
-            const dateB = new Date(b.date ?? '1970-01-01');
-            return dateB.getTime() - dateA.getTime();
-        });
-        setTransactions(sorted);
-    };
-
     return (
         <div id="month-view">
-            <h2>Transactions for {new Date(year, month - 1).toLocaleString("default", { month: "long" })} {year}</h2>
+            <h2>
+                Transactions for{" "}
+                {new Date(year, month - 1).toLocaleString("en-US", { month: "long" })} {year}
+            </h2>
 
             <form onSubmit={handleAddTransaction} style={{ marginBottom: "20px" }}>
                 <input
@@ -246,6 +225,7 @@ export default function MonthView() {
                 </label>
                 <button type="submit">Add</button>
             </form>
+
             <label style={{ display: 'block', marginBottom: '10px' }}>
                 Show:{" "}
                 <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
@@ -254,35 +234,39 @@ export default function MonthView() {
                     <option value="expense">Expense</option>
                 </select>
             </label>
+
             {report && (
                 <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>
                     <h3>Monthly Report</h3>
                     <p><strong>Income:</strong> {report.income} {preferredCurrency}</p>
                     <p><strong>Expenses:</strong> {report.expenses} {preferredCurrency}</p>
                     <p><strong>Balance:</strong> {report.balance} {preferredCurrency}</p>
-                   
-                    <button onClick={() => {
-                        const token = localStorage.getItem("token");
-                        const url = `http://localhost:5201/api/report/export?month=${month}&year=${year}`;
-                        fetch(url, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        })
-                            .then(res => res.blob())
-                            .then(blob => {
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `transactions_${year}_${month}.csv`;
-                                a.click();
-                            });
-                    }}>
+                    <button
+                        className="export-btn"
+                        onClick={() => {
+                            const token = localStorage.getItem("token");
+                            fetch(`http://localhost:5201/api/report/export?month=${month}&year=${year}`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            })
+                                .then(res => res.blob())
+                                .then(blob => {
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = `transactions_${year}_${month}.csv`;
+                                    a.click();
+                                });
+                        }}
+                    >
+                        <FaFileCsv style={{ marginRight: "6px" }} />
                         Export to CSV
                     </button>
+
                 </div>
             )}
 
             <ul id="transaction-list">
-                {Array.isArray(transactions) && transactions.length > 0 ? (
+                {transactions.length > 0 ? (
                     transactions
                         .filter(t => {
                             if (filterType === "income") return t.isIncome;
@@ -290,68 +274,75 @@ export default function MonthView() {
                             return true;
                         })
                         .map((t) => (
-                        <li key={t.id} style={{ marginBottom: "15px" }}>
-                            {editId === t.id ? (
-                                <form onSubmit={handleUpdateTransaction}>
-                                    <input
-                                        value={editForm.description}
-                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                                        required
-                                    />
-                                    <input
-                                        type="number"
-                                        value={editForm.amount}
-                                        onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                                        required
-                                    />
-                                    <input
-                                        type="date"
-                                        value={editForm.date}
-                                        onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                                        required
-                                    />
-                                    <select
-                                        value={editForm.categoryId}
-                                        onChange={(e) => setEditForm({ ...editForm, categoryId: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">-- Select Category --</option>
-                                        {categories.map((cat) => (
-                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                        ))}
-                                    </select>
-                                    <label>
+                            <li key={t.id} className={t.isIncome ? "income" : "expense"}>
+                                {editId === t.id ? (
+                                    <form onSubmit={handleUpdateTransaction}>
                                         <input
-                                            type="checkbox"
-                                            checked={editForm.isIncome}
-                                            onChange={(e) => setEditForm({ ...editForm, isIncome: e.target.checked })}
-                                        /> Income
-                                    </label>
-                                    <button type="submit">Save</button>
-                                    <button type="button" onClick={() => setEditId(null)}>Cancel</button>
-                                </form>
-                            ) : (
-                                <div>
-                                    <strong>{t.description}</strong> – {t.amount} {t.currency}
-                                    <br />
-                                    <small>
-                                        {t.date?.split('T')[0] || 'No date'} | {t.category?.name} |{' '}
-                                        {t.isIncome ? 'Income' : 'Expense'}
-                                    </small>
-                                    <br />
-                                    <button onClick={() => handleEditTransaction(t)}>Edit</button>
-                                    <button onClick={() => handleDeleteTransaction(t.id)}>Delete</button>
-                                </div>
-                            )}
-                        </li>
-                    ))
+                                            value={editForm.description}
+                                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                            required
+                                        />
+                                        <input
+                                            type="number"
+                                            value={editForm.amount}
+                                            onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                                            required
+                                        />
+                                        <input
+                                            type="date"
+                                            value={editForm.date}
+                                            onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                                            required
+                                        />
+                                        <select
+                                            value={editForm.categoryId}
+                                            onChange={(e) => setEditForm({ ...editForm, categoryId: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">-- Select Category --</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.isIncome}
+                                                onChange={(e) => setEditForm({ ...editForm, isIncome: e.target.checked })}
+                                            /> Income
+                                        </label>
+                                        <button type="submit">Save</button>
+                                        <button type="button" onClick={() => setEditId(null)}>Cancel</button>
+                                    </form>
+                                ) : (
+                                    <div>
+                                        <strong>{t.description}</strong> – {t.amount} {t.currency}
+                                        <br />
+                                        <small>
+                                            {t.date?.split('T')[0] || 'No date'} | {t.category?.name} |{' '}
+                                            {t.isIncome ? 'Income' : 'Expense'}
+                                        </small>
+                                        <br />
+                                            <div className="action-buttons">
+                                                <button className="action-btn edit-btn" onClick={() => handleEditTransaction(t)}>
+                                                    <FaEdit style={{ marginRight: "6px" }} />
+                                                    Edit
+                                                </button>
+                                                <button className="action-btn delete-btn" onClick={() => handleDeleteTransaction(t.id)}>
+                                                    <FaTrash style={{ marginRight: "6px" }} />
+                                                    Delete
+                                                </button>
 
+                                            </div>
+
+                                    </div>
+                                )}
+                            </li>
+                        ))
                 ) : (
                     <p style={{ padding: "1rem" }}>No transactions yet. Use the + button to add one!</p>
                 )}
             </ul>
         </div>
-
     );
-
 }

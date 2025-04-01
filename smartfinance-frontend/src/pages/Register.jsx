@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Register.css";
 
 export default function Register() {
     const navigate = useNavigate();
@@ -47,9 +48,10 @@ export default function Register() {
         }
     };
     return (
-        <div id="register-page">
-            <h2>Register</h2>
-            <form onSubmit={handleSubmit}>
+        <div className="register-container">
+            <form onSubmit={handleSubmit} className="register-box">
+                <h2>Create your account</h2>
+
                 <input
                     placeholder="Username"
                     value={username}
@@ -70,16 +72,22 @@ export default function Register() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                 />
+
                 <button type="submit">Register</button>
-                <p>Password requirements:</p>
+
+                <p>Password must include:</p>
                 <ul>
                     <li>At least 6 characters</li>
                     <li>1 uppercase letter [A-Z]</li>
                     <li>1 lowercase letter [a-z]</li>
-                    <li>1 special character (!@#$%^&amp;*(),.?":{ }|&lt;&gt; etc.)</li>
+                    <li>1 special character (!@#$%^&...)</li>
                 </ul>
+
+                <p>
+                    Already have an account?{" "}
+                    <span onClick={() => navigate("/")}>Log in!</span>
+                </p>
             </form>
-            <p>Already have an account? <span onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Log in!</span></p>
         </div>
     );
 }

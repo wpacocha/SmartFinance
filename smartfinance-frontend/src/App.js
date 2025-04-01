@@ -3,6 +3,8 @@ import Login from "./pages/Login.jsx"
 import Dashboard from "./pages/Dashboard.jsx"
 import Register from "./pages/Register.jsx"
 import MonthView from "./pages/MonthView";
+import './App.css';
+
 function App() {
     return (
         <Router>

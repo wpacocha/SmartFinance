@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMonths, createMonth, deleteMonth } from '../services/monthApi';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "./Dashboard.css";
+import { FaFileCsv } from "react-icons/fa";
+
 
 export default function Dashboard() {
     const [months, setMonths] = useState([]);
@@ -9,6 +14,9 @@ export default function Dashboard() {
     const [monthInput, setMonthInput] = useState('');
     const navigate = useNavigate();
     const [yearlyReport, setYearlyReport] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+
+   
 
     useEffect(() => {
         const fetchYearlyReport = async () => {
@@ -137,11 +145,11 @@ export default function Dashboard() {
             )}
 
             {months.map((m) => (
-                <div key={m.id} style={{ marginTop: '10px' }}>
-                    <button onClick={() => navigate(`/month/${m.year}/${m.month}`)}>
+                <div key={m.id} className="month-box">
+                    <button className="view-btn" onClick={() => navigate(`/month/${m.year}/${m.month}`)}>
                         {monthNames[m.month]} {m.year}
                     </button>
-                    <button onClick={() => handleDeleteMonth(m.id)}>Delete</button>
+                    <button className="delete-btn" onClick={() => handleDeleteMonth(m.id)}>Delete</button>
                 </div>
             ))}
             {yearlyReport && (
@@ -150,23 +158,28 @@ export default function Dashboard() {
                     <p><strong>Income:</strong> {yearlyReport.income} PLN</p>
                     <p><strong>Expenses:</strong> {yearlyReport.expenses} PLN</p>
                     <p><strong>Balance:</strong> {yearlyReport.balance} PLN</p>
-                    <button onClick={() => {
-                        const token = localStorage.getItem("token");
-                        const url = `http://localhost:5201/api/report/export-yearly?year=${yearlyReport.year}`;
-                        fetch(url, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        })
-                            .then(res => res.blob())
-                            .then(blob => {
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `transactions_${yearlyReport.year}.csv`;
-                                a.click();
-                            });
-                    }}>
+                    <button
+                        className="export-btn"
+                        onClick={() => {
+                            const token = localStorage.getItem("token");
+                            const url = `http://localhost:5201/api/report/export-yearly?year=${yearlyReport.year}`;
+                            fetch(url, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            })
+                                .then(res => res.blob())
+                                .then(blob => {
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = `transactions_${yearlyReport.year}.csv`;
+                                    a.click();
+                                });
+                        }}
+                    >
+                        <FaFileCsv />
                         Export yearly CSV
                     </button>
+
                 </div>
             )}
 
