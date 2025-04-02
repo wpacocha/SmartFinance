@@ -130,4 +130,18 @@ public class ReportController : ControllerBase
         });
     }
 
+    [HttpGet("available-years")]
+    public IActionResult GetAvailableYears()
+    {
+        var userId = GetUserId();
+
+        var years = _context.Transactions
+            .Where(t => t.UserId == userId)
+            .Select(t => t.Year)
+            .Distinct()
+            .OrderByDescending(y => y)
+            .ToList();
+
+        return Ok(years);
+    }
 }

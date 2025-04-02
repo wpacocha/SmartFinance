@@ -16,26 +16,54 @@ export default function Dashboard() {
     const [yearlyReport, setYearlyReport] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [preferredCurrency, setPreferredCurrency] = useState("PLN");
+    const [availableYears, setAvailableYears] = useState([]);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
    
+    const fetchYearlyReport = async (yearToFetch) => {
+        const token = localStorage.getItem("token");
+
+        try {
+            const res = await fetch(`http://localhost:5201/api/report/yearly?year=${yearToFetch}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setYearlyReport(data);
+        } catch (err) {
+            console.error("Failed to fetch yearly report", err);
+        }
+    };
 
     useEffect(() => {
-        const fetchYearlyReport = async () => {
+        const fetchAvailableYears = async () => {
             const token = localStorage.getItem("token");
-            const year = new Date().getFullYear();
 
             try {
-                const res = await fetch(`http://localhost:5201/api/report/yearly?year=${year}`, {
+                const res = await fetch("http://localhost:5201/api/report/available-years", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                const data = await res.json();
-                setYearlyReport(data);
+                const years = await res.json();
+                setAvailableYears(years?.$values ?? years ?? []);
+
+                if (years.includes(new Date().getFullYear())) {
+                    setSelectedYear(new Date().getFullYear());
+                    fetchYearlyReport(new Date().getFullYear());
+                } else if (years.length > 0) {
+                    setSelectedYear(years[0]);
+                    fetchYearlyReport(years[0]);
+                }
             } catch (err) {
-                console.error("Failed to fetch yearly report", err);
+                console.error("Failed to fetch avaiable years.", err);
             }
         };
-
-        fetchYearlyReport();
+        fetchAvailableYears();
     }, []);
+
+    useEffect(() => {
+        if (selectedYear) {
+            fetchYearlyReport(selectedYear);
+        }
+    }, [selectedYear]);
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -158,20 +186,46 @@ export default function Dashboard() {
                     <button className="view-btn" onClick={() => navigate(`/month/${m.year}/${m.month}`)}>
                         {monthNames[m.month]} {m.year}
                     </button>
+                    <div style={{display: 'flex'} }>
+                    <button
+                        className="charts-btn"
+                        onClick={() => navigate(`/charts/${m.year}/${m.month}`)}
+                    >
+                        Charts
+                    </button>
+
                     <button className="delete-btn" onClick={() => handleDeleteMonth(m.id)}>Delete</button>
+                    </div>
                 </div>
             ))}
             {yearlyReport && (
                 <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>
+                    <div className="year-select">
+                        <label htmlFor="yearSelect" className="year-label">
+                            Select year:
+                        </label>
+                        <select
+                            id="yearSelect"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="year-dropdown"
+                        >
+                            {availableYears.map((year) => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <h3>Yearly Report {yearlyReport.year}</h3>
                     <p><strong>Income:</strong> {yearlyReport.income} {preferredCurrency}</p>
                     <p><strong>Expenses:</strong> {yearlyReport.expenses} {preferredCurrency}</p>
                     <p><strong>Balance:</strong> {yearlyReport.balance} {preferredCurrency}</p>
+
                     <button
                         className="export-btn"
                         onClick={() => {
                             const token = localStorage.getItem("token");
-                            const url = `http://localhost:5201/api/report/export-yearly?year=${yearlyReport.year}`;
+                            const url = `http://localhost:5201/api/report/export-yearly?year=${selectedYear}`;
                             fetch(url, {
                                 headers: { Authorization: `Bearer ${token}` }
                             })
@@ -180,7 +234,7 @@ export default function Dashboard() {
                                     const url = window.URL.createObjectURL(blob);
                                     const a = document.createElement("a");
                                     a.href = url;
-                                    a.download = `transactions_${yearlyReport.year}.csv`;
+                                    a.download = `transactions_${selectedYear}.csv`;
                                     a.click();
                                 });
                         }}
@@ -188,9 +242,9 @@ export default function Dashboard() {
                         <FaFileCsv />
                         Export yearly CSV
                     </button>
-
                 </div>
             )}
+
 
         </div>
     );

@@ -1,4 +1,4 @@
-/* Kontener g³ówny */
+/* Kontener gï¿½ï¿½wny */
 #month-view {
     max-width: 800px;
     margin: 40px auto;
@@ -9,7 +9,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-    /* Nag³ówek */
+    /* Nagï¿½ï¿½wek */
     #month-view h2 {
         margin-bottom: 24px;
         text-align: center;
@@ -103,7 +103,7 @@ form {
         background-color: #388e3c;
     }
 
-/* Styl dla przycisków akcji */
+/* Styl dla przyciskï¿½w akcji */
 .action-buttons {
     margin-top: 8px;
 }
@@ -138,7 +138,7 @@ form {
     }
 
 
-/* Miesiêczny raport */
+/* Miesiï¿½czny raport */
 .export-btn {
     background-color: #9c27b0;
     color: white;
@@ -155,4 +155,17 @@ form {
 
     .export-btn:hover {
         background-color: #7b1fa2;
+    }
+
+.charts-btn {
+    padding: 6px 10px;
+    background-color: #65bbf7;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+    .charts-btn:hover {
+        background-color: #2797e6;
     }

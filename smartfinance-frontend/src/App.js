@@ -5,6 +5,7 @@ import Register from "./pages/Register.jsx"
 import MonthView from "./pages/MonthView";
 import './App.css';
 import SettingsMenu from './components/SettingsMenu';
+import ChartsView from "./pages/ChartsView.jsx";
 
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/month/:year/:month" element={<MonthView />} />
+                <Route path="/charts/:year/:month" element={<ChartsView />} />
             </Routes>
         </Router>
     );

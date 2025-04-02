@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "./MonthView.css";
 import { FaEdit, FaTrash, FaFileCsv } from "react-icons/fa";
 
 export default function MonthView() {
     const { year, month } = useParams();
+    const navigate = useNavigate();
     const [transactions, setTransactions] = useState([]);
     const [categories, setCategories] = useState([]);
     const [preferredCurrency, setPreferredCurrency] = useState("PLN");
@@ -249,6 +250,14 @@ export default function MonthView() {
                     <option value="expense">Expense</option>
                 </select>
             </label>
+            <button
+                className="charts-btn"
+                onClick={() => navigate(`/charts/${year}/${month}`)}
+            >
+                View Charts
+            </button>
+
+
 
             {report && (
                 <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>

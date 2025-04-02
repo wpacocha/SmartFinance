@@ -65,6 +65,20 @@
             background-color: #d32f2f;
         }
 
+.charts-btn {
+    padding: 6px 10px;
+    background-color: #65bbf7;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+    .charts-btn:hover {
+        background-color: #2797e6;
+    }
+
 /* Yearly Report Box */
 .yearly-report {
     margin-top: 40px;
