@@ -88,6 +88,18 @@ export default function MonthView() {
         setTransactions(sorted);
     };
 
+    const refreshReport = async () => {
+        try {
+            const res = await fetch(`http://localhost:5201/api/report/monthly?month=${month}&year=${year}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            });
+            const data = await res.json();
+            setReport(data);
+        } catch (err) {
+            console.error("Failed to fetch report", err);
+        }
+    };
+
     const handleAddTransaction = async (e) => {
         e.preventDefault();
         try {
@@ -118,6 +130,7 @@ export default function MonthView() {
 
             setShowForm(false);
             await refreshTransactions();
+            await refreshReport();
         } catch (err) {
             alert("Failed to add transaction.");
             console.error(err);
@@ -156,6 +169,7 @@ export default function MonthView() {
             if (!res.ok) throw new Error("Failed to update");
             setEditId(null);
             await refreshTransactions();
+            await refreshReport();
         } catch (err) {
             console.error(err);
             alert("Update failed.");
@@ -173,6 +187,7 @@ export default function MonthView() {
             });
             if (!res.ok) throw new Error("Delete failed");
             await refreshTransactions();
+            await refreshReport();
         } catch (err) {
             console.error(err);
             alert("Failed to delete transaction.");

@@ -1,4 +1,5 @@
 using SmartFinance.API.Models;
+using System;
 using System.Text.Json;
 
 namespace SmartFinance.API.Services
@@ -14,6 +15,16 @@ namespace SmartFinance.API.Services
 
         public virtual async Task<ExchangeRate?> GetRateAsync(string currencyCode)
         {
+            if (currencyCode.ToUpper() == "PLN")
+            {
+                return new ExchangeRate
+                {
+                    Currency = "PLN",
+                    Rate = 1.0m,
+                    Date = DateTime.UtcNow
+                };
+            }
+
             var url = $"https://api.nbp.pl/api/exchangerates/rates/A/{currencyCode}/?format=json";
             var response = await _httpClient.GetAsync(url);
 

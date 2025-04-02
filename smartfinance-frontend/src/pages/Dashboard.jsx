@@ -15,7 +15,7 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [yearlyReport, setYearlyReport] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
-
+    const [preferredCurrency, setPreferredCurrency] = useState("PLN");
    
 
     useEffect(() => {
@@ -37,6 +37,15 @@ export default function Dashboard() {
         fetchYearlyReport();
     }, []);
 
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        fetch("http://localhost:5201/api/user/me", {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => setPreferredCurrency(data.preferredCurrency || "PLN"))
+            .catch(err => console.error("Failed to fetch user currency", err));
+    }, []);
 
     const fetchMonths = async () => {
         try {
@@ -155,9 +164,9 @@ export default function Dashboard() {
             {yearlyReport && (
                 <div style={{ marginTop: "30px", padding: "1rem", borderTop: "1px solid #ccc" }}>
                     <h3>Yearly Report {yearlyReport.year}</h3>
-                    <p><strong>Income:</strong> {yearlyReport.income} PLN</p>
-                    <p><strong>Expenses:</strong> {yearlyReport.expenses} PLN</p>
-                    <p><strong>Balance:</strong> {yearlyReport.balance} PLN</p>
+                    <p><strong>Income:</strong> {yearlyReport.income} {preferredCurrency}</p>
+                    <p><strong>Expenses:</strong> {yearlyReport.expenses} {preferredCurrency}</p>
+                    <p><strong>Balance:</strong> {yearlyReport.balance} {preferredCurrency}</p>
                     <button
                         className="export-btn"
                         onClick={() => {

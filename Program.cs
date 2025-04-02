@@ -15,6 +15,7 @@ builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlite("Data source=finance.db"));
 
 builder.Services.AddHttpClient<ExchangeRateService>();
+builder.Services.AddScoped<ICurrencyConversionService, CurrencyConversionService>();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

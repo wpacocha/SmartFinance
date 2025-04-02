@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using SmartFinance.API.Models;
 using SmartFinance.API.Data;
 using System.Security.Claims;
+using SmartFinance.API.Services;
+using System.Threading.Tasks;
 
 namespace SmartFinance.API.Controllers;
 
@@ -12,10 +14,12 @@ namespace SmartFinance.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly FinanceDbContext _context;
+    private readonly ICurrencyConversionService _conversionService;
 
-    public UserController(FinanceDbContext context)
+    public UserController(FinanceDbContext context, ICurrencyConversionService conversionService)
     {
         _context = context;
+        _conversionService = conversionService;
     }
 
     private int GetUserId() =>
@@ -38,7 +42,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("currency")]
-    public IActionResult UpdatePreferredCurrency([FromBody] string newCurrency)
+    public async Task<IActionResult> UpdatePreferredCurrency([FromBody] UpdateCurrencyRequest request)
     {
         var userId = GetUserId();
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
@@ -46,8 +50,12 @@ public class UserController : ControllerBase
         if (user == null)
             return NotFound("User not found");
 
-        user.PreferredCurrency = newCurrency.ToUpper();
-        _context.SaveChanges();
+        var newCurrency = request.Currency.ToUpper();
+
+        await _conversionService.ConvertUserTransactionsToCurrency(user, newCurrency);
+
+        user.PreferredCurrency = newCurrency;
+        await _context.SaveChangesAsync();
 
         return Ok(new
         {
@@ -55,4 +63,5 @@ public class UserController : ControllerBase
             currency = user.PreferredCurrency
         });
     }
+
 }

@@ -21,4 +21,10 @@
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="smartfinance-frontend\src\components\" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="smartfinance-frontend\src\components\" />
+    </ItemGroup>
 </Project>
