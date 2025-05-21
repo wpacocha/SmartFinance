@@ -7,7 +7,6 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace SmartFinance.API.Controllers;
 
@@ -27,8 +26,12 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserDto request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         if (await _context.Users.AnyAsync(u => u.Username == request.Username))
             return BadRequest("Username already exists.");
+
         CreatePasswordHash(request.Password, out byte[] hash, out byte[] salt);
 
         var user = new User
@@ -37,8 +40,10 @@ public class AuthController : ControllerBase
             PasswordHash = hash,
             PasswordSalt = salt,
         };
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
+
         return Ok("User successfully registered.");
     }
 
@@ -50,10 +55,13 @@ public class AuthController : ControllerBase
 
         if (!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
             return BadRequest("Invalid password.");
+
         string token = CreateToken(user);
         return Ok(new { token });
     }
-    // helpers
+
+    // ================= Helpers =================
+
     private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)
     {
         using var hmac = new HMACSHA512();
@@ -83,6 +91,7 @@ public class AuthController : ControllerBase
             claims: claims,
             expires: DateTime.Now.AddDays(7),
             signingCredentials: creds);
+
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

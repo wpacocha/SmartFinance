@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SmartFinance.API.Data;
+using SmartFinance.API.Middleware;
 using SmartFinance.API.Services;
 using System.Text;
 
@@ -56,6 +57,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseExceptionMiddleware();
+
 // 🌐 Swagger dev mode
 if (app.Environment.IsDevelopment())
 {
@@ -65,8 +68,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowLocalhost3000");
 
-// ⛓️ Middleware kolejność ma znaczenie
-app.UseAuthentication(); // 👈 musi być przed Authorization!
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapControllers();
@@ -75,6 +77,9 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<FinanceDbContext>();
+
+    context.Database.Migrate();
+
     DataSeeder.SeedCategories(context);
 }
 

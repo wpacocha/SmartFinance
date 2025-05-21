@@ -20,13 +20,18 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (!username || !password || !confirmPassword) {
+            alert("Please fill in all fields.");
+            return;
+        }
+
         if (!isPasswordValid(password)) {
-            alert('Password must be at least 6 characters long, contain 1 uppercase letter, 1 lowercase letter and 1 special character.');
+            alert("Password must be at least 6 characters long, contain 1 uppercase letter, 1 lowercase letter and 1 special character.");
             return;
         }
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
+            alert("Passwords do not match.");
             return;
         }
 
@@ -41,12 +46,13 @@ export default function Register() {
 
             if (!res.ok) throw new Error("Registration failed.");
 
-            alert('Registration successfull!');
+            alert('Registration successful!');
             navigate("/");
         } catch (err) {
             alert("Registration error.");
         }
     };
+
     return (
         <div className="register-container">
             <form onSubmit={handleSubmit} className="register-box">

@@ -25,6 +25,7 @@
       <None Remove="smartfinance-frontend\src\components\" />
     </ItemGroup>
     <ItemGroup>
+      <Folder Include="Middleware\" />
       <Folder Include="smartfinance-frontend\src\components\" />
     </ItemGroup>
 </Project>
